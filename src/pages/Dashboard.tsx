@@ -11,7 +11,7 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, TrendingUp, Calendar, Shield } from "lucide-react";
 
-const API_BASE = "https://apps.data.wearebasis.io/api";
+const API_BASE = "https://cors-anywhere.herokuapp.com/https://apps.data.wearebasis.io/api";
 
 interface PanelData {
   date: string;
