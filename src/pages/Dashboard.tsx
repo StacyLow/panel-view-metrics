@@ -171,41 +171,46 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Metrics Time Selector */}
-        <MetricsTimeSelector 
-          currentRange={metricsTimeRange}
-          onRangeChange={setMetricsTimeRange}
-        />
+        {/* Metrics Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-foreground">Metrics</h2>
+            <MetricsTimeSelector 
+              currentRange={metricsTimeRange}
+              onRangeChange={setMetricsTimeRange}
+            />
+          </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MetricCard
-            title="Total Panels"
-            value={currentCount.toString()}
-            icon={Activity}
-            showComparison={true}
-            comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
-            currentValue={currentCount}
-            previousValue={currentCount - currentPeriodCount + previousPeriodCount}
-          />
-          <MetricCard
-            title={`Current ${metricsTimeRange === "1D" ? "Day" : metricsTimeRange === "1W" ? "Week" : metricsTimeRange === "1M" ? "Month" : metricsTimeRange === "3M" ? "3 Months" : metricsTimeRange === "6M" ? "6 Months" : "Year"}`}
-            value={currentPeriodCount.toString()}
-            icon={Calendar}
-            showComparison={true}
-            comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
-            currentValue={currentPeriodCount}
-            previousValue={previousPeriodCount}
-          />
-          <MetricCard
-            title="Growth Rate"
-            value={currentPeriodCount > previousPeriodCount ? "Increasing" : currentPeriodCount < previousPeriodCount ? "Decreasing" : "Stable"}
-            icon={TrendingUp}
-            showComparison={true}
-            comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
-            currentValue={currentPeriodCount}
-            previousValue={previousPeriodCount}
-          />
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard
+              title="Total Panels"
+              value={currentCount.toString()}
+              icon={Activity}
+              showComparison={true}
+              comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
+              currentValue={currentCount}
+              previousValue={currentCount - currentPeriodCount + previousPeriodCount}
+            />
+            <MetricCard
+              title={`Current ${metricsTimeRange === "1D" ? "Day" : metricsTimeRange === "1W" ? "Week" : metricsTimeRange === "1M" ? "Month" : metricsTimeRange === "3M" ? "3 Months" : metricsTimeRange === "6M" ? "6 Months" : "Year"}`}
+              value={currentPeriodCount.toString()}
+              icon={Calendar}
+              showComparison={true}
+              comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
+              currentValue={currentPeriodCount}
+              previousValue={previousPeriodCount}
+            />
+            <MetricCard
+              title="Growth Rate"
+              value={currentPeriodCount > previousPeriodCount ? "Increasing" : currentPeriodCount < previousPeriodCount ? "Decreasing" : "Stable"}
+              icon={TrendingUp}
+              showComparison={true}
+              comparisonPeriod={getMetricsPeriodLabel(metricsTimeRange)}
+              currentValue={currentPeriodCount}
+              previousValue={previousPeriodCount}
+            />
+          </div>
         </div>
 
         {/* Main Chart */}
