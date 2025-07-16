@@ -185,9 +185,10 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="Jetski Progress"
-              value={`${Math.min(Math.round((currentCount / 4000) * 100), 100)}%`}
+              value={`${Math.min((currentCount / 4000) * 100, 100).toFixed(1)}%`}
               icon={Target}
               showComparison={false}
+              change={`${currentCount.toLocaleString()} of 4,000 needed for Jetski`}
             />
             <MetricCard
               title="Total Panels"
