@@ -6,7 +6,7 @@ import { PanelChart } from "@/components/dashboard/PanelChart";
 import { TimeSelector } from "@/components/dashboard/TimeSelector";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MetricsTimeSelector, MetricsTimeRange } from "@/components/dashboard/MetricsTimeSelector";
-import { Activity, TrendingUp, Calendar } from "lucide-react";
+import { Activity, TrendingUp, Calendar, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PanelData {
@@ -182,7 +182,13 @@ const Dashboard = () => {
           </div>
 
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Jetski Progress"
+              value={`${Math.min(Math.round((currentCount / 4000) * 100), 100)}%`}
+              icon={Target}
+              showComparison={false}
+            />
             <MetricCard
               title="Total Panels"
               value={currentCount.toString()}
