@@ -21,26 +21,28 @@ const Dashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [loading, setLoading] = useState(false);
 
-  // Fetch panel count from Supabase on mount
+  // Fetch panel count from Supabase on mount and when time range changes
   useEffect(() => {
     fetchPanelCount();
-  }, []);
+  }, [timeRange]);
 
   const fetchPanelCount = async () => {
     setLoading(true);
     try {
-      const { count, error } = await supabase
+      // Fetch both count and actual panel data with timestamps
+      const { data: panels, error } = await supabase
         .from('panels')
-        .select('*', { count: 'exact', head: true });
+        .select('created_at')
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const panelCount = count || 0;
+      const panelCount = panels?.length || 0;
       setCurrentCount(panelCount);
       
-      // Generate mock historical data based on current count
-      const mockData = generateMockHistoricalData(panelCount, timeRange);
-      setPanelData(mockData);
+      // Process real historical data based on actual creation dates
+      const historicalData = processRealHistoricalData(panels || [], timeRange);
+      setPanelData(historicalData);
       
       toast({
         title: "Data loaded",
@@ -57,7 +59,9 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  const generateMockHistoricalData = (currentCount: number, range: TimeRange): PanelData[] => {
+  const processRealHistoricalData = (panels: { created_at: string }[], range: TimeRange): PanelData[] => {
+    if (!panels.length) return [];
+
     const now = new Date();
     const data: PanelData[] = [];
     let days = 30;
@@ -69,17 +73,25 @@ const Dashboard = () => {
       case "ALL": days = 730; break;
     }
 
-    for (let i = days; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
+    // Create date range for the chart
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Group panels by date and calculate cumulative counts
+    for (let i = 0; i <= days; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(currentDate.getDate() + i);
+      const dateStr = currentDate.toISOString().split('T')[0];
       
-      // Generate realistic panel count variation
-      const variation = Math.random() * 0.2 - 0.1; // ±10% variation
-      const count = Math.max(0, Math.floor(currentCount * (1 + variation)));
+      // Count panels installed up to this date
+      const cumulativeCount = panels.filter(panel => {
+        const panelDate = new Date(panel.created_at).toISOString().split('T')[0];
+        return panelDate <= dateStr;
+      }).length;
       
       data.push({
-        date: date.toISOString().split('T')[0],
-        count: count
+        date: dateStr,
+        count: cumulativeCount
       });
     }
     
