@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { PanelChart } from "@/components/dashboard/PanelChart";
 import { TimeSelector } from "@/components/dashboard/TimeSelector";
+import { ComparisonToggle } from "@/components/dashboard/ComparisonToggle";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Activity, TrendingUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,11 +21,60 @@ const Dashboard = () => {
   const [currentCount, setCurrentCount] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [loading, setLoading] = useState(false);
+  const [comparisonEnabled, setComparisonEnabled] = useState(false);
+  const [currentPeriodCount, setCurrentPeriodCount] = useState(0);
+  const [previousPeriodCount, setPreviousPeriodCount] = useState(0);
 
   // Fetch panel count from Supabase on mount and when time range changes
   useEffect(() => {
     fetchPanelCount();
   }, [timeRange]);
+
+  const getPeriodLabel = (range: TimeRange): string => {
+    switch (range) {
+      case "1M": return "previous month";
+      case "3M": return "previous 3 months";
+      case "6M": return "previous 6 months"; 
+      case "1Y": return "previous year";
+      case "ALL": return "previous period";
+    }
+  };
+
+  const calculatePeriodCounts = (panels: { created_at: string }[], range: TimeRange) => {
+    const now = new Date();
+    let days = 30;
+    
+    switch (range) {
+      case "3M": days = 90; break;
+      case "6M": days = 180; break;
+      case "1Y": days = 365; break;
+      case "ALL": days = 730; break;
+    }
+
+    // Current period: now - days to now
+    const currentPeriodStart = new Date(now);
+    currentPeriodStart.setDate(currentPeriodStart.getDate() - days);
+    
+    // Previous period: (now - 2*days) to (now - days)
+    const previousPeriodStart = new Date(now);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - (days * 2));
+    const previousPeriodEnd = new Date(currentPeriodStart);
+
+    const currentPeriodPanels = panels.filter(panel => {
+      const panelDate = new Date(panel.created_at);
+      return panelDate >= currentPeriodStart && panelDate <= now;
+    });
+
+    const previousPeriodPanels = panels.filter(panel => {
+      const panelDate = new Date(panel.created_at);
+      return panelDate >= previousPeriodStart && panelDate < previousPeriodEnd;
+    });
+
+    return {
+      current: currentPeriodPanels.length,
+      previous: previousPeriodPanels.length
+    };
+  };
 
   const fetchPanelCount = async () => {
     setLoading(true);
@@ -39,6 +89,11 @@ const Dashboard = () => {
 
       const panelCount = panels?.length || 0;
       setCurrentCount(panelCount);
+      
+      // Calculate period-based counts for comparison
+      const periodCounts = calculatePeriodCounts(panels || [], timeRange);
+      setCurrentPeriodCount(periodCounts.current);
+      setPreviousPeriodCount(periodCounts.previous);
       
       // Process real historical data based on actual creation dates
       const historicalData = processRealHistoricalData(panels || [], timeRange);
@@ -108,9 +163,16 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Production Panel Dashboard</h1>
             <p className="text-muted-foreground">Real-time monitoring of panel production</p>
           </div>
-          <Button variant="outline" onClick={fetchPanelCount} disabled={loading}>
-            {loading ? "Loading..." : "Refresh Data"}
-          </Button>
+          <div className="flex items-center gap-4">
+            <ComparisonToggle 
+              enabled={comparisonEnabled}
+              onToggle={setComparisonEnabled}
+              periodLabel={getPeriodLabel(timeRange)}
+            />
+            <Button variant="outline" onClick={fetchPanelCount} disabled={loading}>
+              {loading ? "Loading..." : "Refresh Data"}
+            </Button>
+          </div>
         </div>
 
         {/* Metrics Cards */}
@@ -119,22 +181,28 @@ const Dashboard = () => {
             title="Total Panels"
             value={currentCount.toString()}
             icon={Activity}
-            change="+5.2%"
-            changeType="positive"
+            showComparison={comparisonEnabled}
+            comparisonPeriod={getPeriodLabel(timeRange)}
+            currentValue={currentCount}
+            previousValue={currentCount - currentPeriodCount + previousPeriodCount}
           />
           <MetricCard
-            title="This Month"
-            value={currentCount.toString()}
+            title={`Current ${timeRange === "1M" ? "Month" : timeRange === "1Y" ? "Year" : "Period"}`}
+            value={currentPeriodCount.toString()}
             icon={Calendar}
-            change="+12.3%"
-            changeType="positive"
+            showComparison={comparisonEnabled}
+            comparisonPeriod={getPeriodLabel(timeRange)}
+            currentValue={currentPeriodCount}
+            previousValue={previousPeriodCount}
           />
           <MetricCard
-            title="Trend"
-            value="Increasing"
+            title="Growth Rate"
+            value={currentPeriodCount > previousPeriodCount ? "Increasing" : currentPeriodCount < previousPeriodCount ? "Decreasing" : "Stable"}
             icon={TrendingUp}
-            change="+2.1%"
-            changeType="positive"
+            showComparison={comparisonEnabled}
+            comparisonPeriod={getPeriodLabel(timeRange)}
+            currentValue={currentPeriodCount}
+            previousValue={previousPeriodCount}
           />
         </div>
 
