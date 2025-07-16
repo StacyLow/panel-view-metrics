@@ -4,10 +4,9 @@ import { Label } from "@/components/ui/label";
 interface ComparisonToggleProps {
   enabled: boolean;
   onToggle: (enabled: boolean) => void;
-  periodLabel?: string;
 }
 
-export const ComparisonToggle = ({ enabled, onToggle, periodLabel }: ComparisonToggleProps) => {
+export const ComparisonToggle = ({ enabled, onToggle }: ComparisonToggleProps) => {
   return (
     <div className="flex items-center space-x-2">
       <Switch
@@ -16,7 +15,7 @@ export const ComparisonToggle = ({ enabled, onToggle, periodLabel }: ComparisonT
         onCheckedChange={onToggle}
       />
       <Label htmlFor="comparison-toggle" className="text-sm font-medium">
-        Compare vs {periodLabel || "previous period"}
+        Compare vs previous period
       </Label>
     </div>
   );

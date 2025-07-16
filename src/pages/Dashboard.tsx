@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { PanelChart } from "@/components/dashboard/PanelChart";
 import { TimeSelector } from "@/components/dashboard/TimeSelector";
 import { ComparisonToggle } from "@/components/dashboard/ComparisonToggle";
+import { ComparisonPeriodSelector, ComparisonRange } from "@/components/dashboard/ComparisonPeriodSelector";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Activity, TrendingUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,33 +23,33 @@ const Dashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [loading, setLoading] = useState(false);
   const [comparisonEnabled, setComparisonEnabled] = useState(false);
+  const [comparisonRange, setComparisonRange] = useState<ComparisonRange>("30D");
   const [currentPeriodCount, setCurrentPeriodCount] = useState(0);
   const [previousPeriodCount, setPreviousPeriodCount] = useState(0);
 
-  // Fetch panel count from Supabase on mount and when time range changes
+  // Fetch panel count from Supabase on mount and when time range or comparison range changes
   useEffect(() => {
     fetchPanelCount();
-  }, [timeRange]);
+  }, [timeRange, comparisonRange]);
 
-  const getPeriodLabel = (range: TimeRange): string => {
+  const getComparisonPeriodLabel = (range: ComparisonRange): string => {
     switch (range) {
-      case "1M": return "previous month";
-      case "3M": return "previous 3 months";
-      case "6M": return "previous 6 months"; 
+      case "7D": return "previous 7 days";
+      case "30D": return "previous 30 days";
+      case "90D": return "previous 90 days";
       case "1Y": return "previous year";
-      case "ALL": return "previous period";
     }
   };
 
-  const calculatePeriodCounts = (panels: { created_at: string }[], range: TimeRange) => {
+  const calculatePeriodCounts = (panels: { created_at: string }[], range: ComparisonRange) => {
     const now = new Date();
     let days = 30;
     
     switch (range) {
-      case "3M": days = 90; break;
-      case "6M": days = 180; break;
+      case "7D": days = 7; break;
+      case "30D": days = 30; break;
+      case "90D": days = 90; break;
       case "1Y": days = 365; break;
-      case "ALL": days = 730; break;
     }
 
     // Current period: now - days to now
@@ -90,8 +91,8 @@ const Dashboard = () => {
       const panelCount = panels?.length || 0;
       setCurrentCount(panelCount);
       
-      // Calculate period-based counts for comparison
-      const periodCounts = calculatePeriodCounts(panels || [], timeRange);
+      // Calculate period-based counts for comparison using independent comparison range
+      const periodCounts = calculatePeriodCounts(panels || [], comparisonRange);
       setCurrentPeriodCount(periodCounts.current);
       setPreviousPeriodCount(periodCounts.previous);
       
@@ -164,11 +165,18 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Real-time monitoring of panel production</p>
           </div>
           <div className="flex items-center gap-4">
-            <ComparisonToggle 
-              enabled={comparisonEnabled}
-              onToggle={setComparisonEnabled}
-              periodLabel={getPeriodLabel(timeRange)}
-            />
+            <div className="flex items-center gap-2">
+              <ComparisonToggle 
+                enabled={comparisonEnabled}
+                onToggle={setComparisonEnabled}
+              />
+              {comparisonEnabled && (
+                <ComparisonPeriodSelector
+                  currentRange={comparisonRange}
+                  onRangeChange={setComparisonRange}
+                />
+              )}
+            </div>
             <Button variant="outline" onClick={fetchPanelCount} disabled={loading}>
               {loading ? "Loading..." : "Refresh Data"}
             </Button>
@@ -182,7 +190,7 @@ const Dashboard = () => {
             value={currentCount.toString()}
             icon={Activity}
             showComparison={comparisonEnabled}
-            comparisonPeriod={getPeriodLabel(timeRange)}
+            comparisonPeriod={getComparisonPeriodLabel(comparisonRange)}
             currentValue={currentCount}
             previousValue={currentCount - currentPeriodCount + previousPeriodCount}
           />
@@ -191,7 +199,7 @@ const Dashboard = () => {
             value={currentPeriodCount.toString()}
             icon={Calendar}
             showComparison={comparisonEnabled}
-            comparisonPeriod={getPeriodLabel(timeRange)}
+            comparisonPeriod={getComparisonPeriodLabel(comparisonRange)}
             currentValue={currentPeriodCount}
             previousValue={previousPeriodCount}
           />
@@ -200,7 +208,7 @@ const Dashboard = () => {
             value={currentPeriodCount > previousPeriodCount ? "Increasing" : currentPeriodCount < previousPeriodCount ? "Decreasing" : "Stable"}
             icon={TrendingUp}
             showComparison={comparisonEnabled}
-            comparisonPeriod={getPeriodLabel(timeRange)}
+            comparisonPeriod={getComparisonPeriodLabel(comparisonRange)}
             currentValue={currentPeriodCount}
             previousValue={previousPeriodCount}
           />
