@@ -55,26 +55,26 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const authToken = data.token || data.access_token || response.headers.get("Authorization");
+        const setCookie = response.headers.get("Set-Cookie");
         
-        if (authToken) {
-          setToken(authToken);
+        if (setCookie) {
+          const sessionToken = setCookie.split(";")[0];
+          setToken(sessionToken);
           setIsAuthenticated(true);
           setLoginOpen(false);
           
           // Store credentials
           localStorage.setItem("panel_dashboard_password", password);
-          localStorage.setItem("panel_dashboard_token", authToken);
+          localStorage.setItem("panel_dashboard_token", sessionToken);
           
           toast({
             title: "Authentication successful",
             description: "Connected to panel tracking system",
           });
           
-          fetchPanelData(authToken);
+          fetchPanelData(sessionToken);
         } else {
-          throw new Error("No token received");
+          throw new Error("No session token received");
         }
       } else {
         throw new Error("Authentication failed");
@@ -94,7 +94,7 @@ const Dashboard = () => {
     try {
       const response = await fetch(`${API_BASE}/v1/switchboards?type_id=0`, {
         headers: {
-          "Authorization": `Bearer ${authToken}`,
+          "Cookie": authToken,
           "Content-Type": "application/json",
         },
       });
