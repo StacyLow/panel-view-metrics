@@ -1,17 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { PanelChart } from "@/components/dashboard/PanelChart";
 import { TimeSelector } from "@/components/dashboard/TimeSelector";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, TrendingUp, Calendar, Shield } from "lucide-react";
-
-const API_BASE = "https://cors-anywhere.herokuapp.com/https://apps.data.wearebasis.io/api";
+import { Activity, TrendingUp, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PanelData {
   date: string;
@@ -21,114 +16,38 @@ interface PanelData {
 export type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
 
 const Dashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState<string | null>(null);
   const [panelData, setPanelData] = useState<PanelData[]>([]);
   const [currentCount, setCurrentCount] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [loading, setLoading] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
 
-  // Check for stored credentials on mount
+  // Fetch panel count from Supabase on mount
   useEffect(() => {
-    const storedPassword = localStorage.getItem("panel_dashboard_password");
-    const storedToken = localStorage.getItem("panel_dashboard_token");
-    
-    if (storedPassword && storedToken) {
-      setPassword(storedPassword);
-      setToken(storedToken);
-      setIsAuthenticated(true);
-      fetchPanelData(storedToken);
-    }
+    fetchPanelCount();
   }, []);
 
-  const authenticate = async () => {
+  const fetchPanelCount = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/v1/roles/admin/authorize`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password: password }),
-        credentials: 'include', // Include cookies for CORS
-      });
+      const { count, error } = await supabase
+        .from('panels')
+        .select('*', { count: 'exact', head: true });
 
-      if (response.ok) {
-        const setCookie = response.headers.get("Set-Cookie");
-        
-        if (setCookie) {
-          const sessionToken = setCookie.split(";")[0];
-          setToken(sessionToken);
-          setIsAuthenticated(true);
-          setLoginOpen(false);
-          
-          // Store credentials
-          localStorage.setItem("panel_dashboard_password", password);
-          localStorage.setItem("panel_dashboard_token", sessionToken);
-          
-          toast({
-            title: "Authentication successful",
-            description: "Connected to panel tracking system",
-          });
-          
-          fetchPanelData(sessionToken);
-        } else {
-          throw new Error("No session token received");
-        }
-      } else {
-        const errorText = await response.text();
-        console.error("Auth response:", response.status, errorText);
-        throw new Error(`Authentication failed: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Authentication error:", error);
-      let errorMessage = "Please check your password and try again";
+      if (error) throw error;
+
+      const panelCount = count || 0;
+      setCurrentCount(panelCount);
       
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        errorMessage = "Unable to connect to server. Please check network connection.";
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
+      // Generate mock historical data based on current count
+      const mockData = generateMockHistoricalData(panelCount, timeRange);
+      setPanelData(mockData);
       
       toast({
-        title: "Authentication failed",
-        description: errorMessage,
-        variant: "destructive",
+        title: "Data loaded",
+        description: `Found ${panelCount} installed panels`,
       });
-    }
-    setLoading(false);
-  };
-
-  const fetchPanelData = async (authToken: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE}/v1/switchboards?type_id=0`, {
-        headers: {
-          "Cookie": authToken,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const switchboards = await response.json();
-        const count = Array.isArray(switchboards) ? switchboards.length : 0;
-        setCurrentCount(count);
-        
-        // Generate mock historical data based on current count
-        // In a real implementation, you'd modify your API to return historical data
-        const mockData = generateMockHistoricalData(count, timeRange);
-        setPanelData(mockData);
-        
-        toast({
-          title: "Data updated",
-          description: `Found ${count} active panels`,
-        });
-      } else {
-        throw new Error("Failed to fetch panel data");
-      }
     } catch (error) {
+      console.error("Error fetching panel count:", error);
       toast({
         title: "Data fetch failed",
         description: "Unable to retrieve panel data",
@@ -167,50 +86,6 @@ const Dashboard = () => {
     return data;
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setToken(null);
-    setPassword("");
-    localStorage.removeItem("panel_dashboard_password");
-    localStorage.removeItem("panel_dashboard_token");
-    toast({
-      title: "Logged out",
-      description: "Session ended",
-    });
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <CardTitle className="text-2xl">Panel Dashboard Access</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Admin Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter admin password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && authenticate()}
-              />
-            </div>
-            <Button 
-              onClick={authenticate} 
-              className="w-full"
-              disabled={loading || !password}
-            >
-              {loading ? "Authenticating..." : "Access Dashboard"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -221,14 +96,9 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Production Panel Dashboard</h1>
             <p className="text-muted-foreground">Real-time monitoring of panel production</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => token && fetchPanelData(token)}>
-              Refresh Data
-            </Button>
-            <Button variant="ghost" onClick={logout}>
-              Logout
-            </Button>
-          </div>
+          <Button variant="outline" onClick={fetchPanelCount} disabled={loading}>
+            {loading ? "Loading..." : "Refresh Data"}
+          </Button>
         </div>
 
         {/* Metrics Cards */}
