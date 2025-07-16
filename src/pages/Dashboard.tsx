@@ -52,6 +52,7 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ password: password }),
+        credentials: 'include', // Include cookies for CORS
       });
 
       if (response.ok) {
@@ -77,12 +78,23 @@ const Dashboard = () => {
           throw new Error("No session token received");
         }
       } else {
-        throw new Error("Authentication failed");
+        const errorText = await response.text();
+        console.error("Auth response:", response.status, errorText);
+        throw new Error(`Authentication failed: ${response.status}`);
       }
     } catch (error) {
+      console.error("Authentication error:", error);
+      let errorMessage = "Please check your password and try again";
+      
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        errorMessage = "Unable to connect to server. Please check network connection.";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Authentication failed",
-        description: "Please check your password and try again",
+        description: errorMessage,
         variant: "destructive",
       });
     }
