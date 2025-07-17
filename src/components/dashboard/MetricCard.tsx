@@ -83,7 +83,7 @@ export const MetricCard = ({
               </div>
             ) : change && (
               <p className={`text-xs font-medium ${getChangeColor()}`}>
-                {change} from last period
+                {change}
               </p>
             )}
           </div>

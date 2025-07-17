@@ -163,8 +163,8 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Production Panel Dashboard</h1>
-            <p className="text-muted-foreground">Real-time monitoring of panel production</p>
+            <h1 className="text-3xl font-bold text-foreground">Installed Panels Dashboard</h1>
+            <p className="text-muted-foreground">Real-time tracking of the total number of panels installed</p>
           </div>
           <Button variant="outline" onClick={fetchPanelCount} disabled={loading}>
             {loading ? "Loading..." : "Refresh Data"}
@@ -223,7 +223,7 @@ const Dashboard = () => {
         {/* Main Chart */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <CardTitle>Panel Production Over Time</CardTitle>
+            <CardTitle>Installed Panels Over Time</CardTitle>
             <TimeSelector currentRange={timeRange} onRangeChange={setTimeRange} />
           </div>
           <PanelChart data={panelData} timeRange={timeRange} />
