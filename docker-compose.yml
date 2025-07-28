@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - SUPABASE_PANEL_URL=${SUPABASE_PANEL_URL:-https://efvmshqkpqczrbsilhwu.supabase.co}
+      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
+    volumes:
+      - ./logs:/var/log
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  logs:
