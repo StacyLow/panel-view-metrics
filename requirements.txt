@@ -1,3 +1,3 @@
 --extra-index-url https://__GL_USER__:__GL_PASSWORD__@gitlab.com/api/v4/projects/67700062/packages/pypi/simple
-requests==2.31.0
+requests==2.28.0
 basisvectors
