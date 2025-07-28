@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        GL_USER: ${GL_USER}
+        GL_PASSWORD: ${GL_PASSWORD}
     ports:
       - "3000:80"
     environment:
