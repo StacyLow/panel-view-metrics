@@ -38,9 +38,15 @@ RUN nginx -t
 # Set up Python environment
 WORKDIR /app
 
-# Copy Python requirements and install dependencies
+# Build arguments for GitLab credentials
+ARG GL_USER
+ARG GL_PASSWORD
+
+# Copy and substitute credentials in requirements.txt
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN sed -i "s/__GL_USER__/${GL_USER}/" requirements.txt && \
+    sed -i "s/__GL_PASSWORD__/${GL_PASSWORD}/" requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy Python script
 COPY scripts/ ./scripts/
