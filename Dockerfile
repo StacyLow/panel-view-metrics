@@ -35,12 +35,6 @@ RUN mkdir -p /var/log/nginx
 # Create app user
 RUN useradd -r -s /bin/bash app
 
-# Create log directory and set permissions
-RUN mkdir -p /var/log/nginx && \
-    touch /var/log/panel_upload.log && \
-    chown app:app /var/log/panel_upload.log && \
-    chown -R app:app /app
-
 # Set up nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN nginx -t
@@ -70,6 +64,12 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set up cron job for Python script
 RUN echo "0 */4 * * * /usr/local/bin/python /app/scripts/panel_upload.py >> /var/log/panel_upload.log 2>&1" | crontab -u app -
+
+# Create log directory and set permissions
+RUN mkdir -p /var/log && \
+    touch /var/log/panel_upload.log && \
+    chown app:app /var/log/panel_upload.log && \
+    chown -R app:app /app
 
 # Expose port
 EXPOSE 80
