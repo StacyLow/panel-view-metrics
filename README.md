@@ -105,16 +105,16 @@ CREATE TABLE panels (
 - Docker health checks included in compose file
 
 ### Logs
-- Application logs: `docker-compose logs dashboard`
-- Python script logs: `docker-compose exec dashboard tail -f /var/log/panel_upload.log`
-- nginx logs: `docker-compose exec dashboard tail -f /var/log/nginx_stdout.log`
+- All application logs: `docker-compose logs dashboard`
+- Follow logs in real-time: `docker-compose logs -f dashboard`
+- Python script logs only: `docker-compose logs dashboard | grep panel_upload`
 
 ## Troubleshooting
 
 ### Common Issues
 1. **Missing environment variables**: Ensure `.env` file is properly configured
 2. **Database connection issues**: Verify Supabase credentials and network access
-3. **Python script failures**: Check logs at `/var/log/panel_upload.log`
+3. **Python script failures**: Check logs with `docker-compose logs dashboard | grep panel_upload`
 
 ### Debug Commands
 ```bash
