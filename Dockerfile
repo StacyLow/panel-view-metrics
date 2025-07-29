@@ -36,7 +36,7 @@ RUN mkdir -p /var/log/nginx
 RUN useradd -r -s /bin/bash app
 
 # Set up nginx
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf /etc/nginx/nginx.conf
 RUN nginx -t
 
 # Set up Python environment
