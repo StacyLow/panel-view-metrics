@@ -26,7 +26,11 @@ RUN apt-get update && apt-get install -y \
     nginx \
     cron \
     supervisor \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Create nginx log directory
+RUN mkdir -p /var/log/nginx
 
 # Create app user
 RUN useradd -r -s /bin/bash app
